@@ -81,7 +81,7 @@ class ServerTestCase(unittest.TestCase):
         self.assertTrue(r.status_code == 200, "Code not 200!")
         for key in self.world:
             r = self.app.put(('/entity/%s' % key),
-                             data=json.dumps(self.world[key]))
+		data=json.dumps(self.world[key]))
             self.assertTrue(r.status_code == 200, "Code not 200!")
             j = json.loads(r.data)
             self.assertTrue(len(j.keys()) >= 3,"JSON lacking keys! %s" % j.keys())

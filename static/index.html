@@ -1,3 +1,19 @@
+<!--
+# Copyright 2015 (Audrey) Xuefeng Li
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.2
+-->
+
 <!DOCTYPE HTML>
 <html> 
   <head> 
@@ -30,6 +46,7 @@ var host = window.location.host;
 var context = canvas.getContext("2d");
 var W = canvas.width  = window.innerWidth-6;
 var H = canvas.height = window.innerHeight-50;
+var clientID = Math.floor(Math.random()*100);
 
 
 function sendJSONXMLHTTPRequest(url, objects, callback) {
@@ -38,8 +55,13 @@ function sendJSONXMLHTTPRequest(url, objects, callback) {
         if (xhr.readyState==4) {
             try {
                 if (xhr.status==200) {
-                    //XXX: parse some JSON from the request!
-                    //XXX: Pass the data to the callback!
+                     if (callback===null) {;
+                     } else {
+                        //XXX: parse some JSON from the request!
+                        var data = JSON.parse(xhr.responseText);
+                        //XXX: Pass the data to the callback!
+                        callback(data);
+                     }
                 }
             } 
             catch(e) {
@@ -50,8 +72,13 @@ function sendJSONXMLHTTPRequest(url, objects, callback) {
     //XXX: POST to a URL
     //XXX: set the mimetype and the accept headers!
     // Remember to use application/json !
+    xhr.open("POST", url, true);
+    var body = JSON.stringify(objects);
+    xhr.setRequestHeader("Content-Length", body.length);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Accept", "*/*");
+    xhr.send(body);
 }
-
 
 world = {};
 
@@ -59,14 +86,22 @@ world = {};
 function drawCircle(context,entity) {
     with(context) {
         beginPath();              
-        lineWidth = 3;
+        lineWidth = 2;
         var x = entity["x"];
         var y = entity["y"];
         //moveTo(x,y);
-        fillStyle = entity["colour"];
+        //lineTo(x-10,y-10)
+        grd = createRadialGradient(0, 0, 0, 0, 0, 1000);
+        grd.addColorStop(0, "red");
+        grd.addColorStop(0.25, "orange")
+        grd.addColorStop(0.5, "green");
+        grd.addColorStop(0.75, "blue")
+        grd.addColorStop(1, "pink")
+        //fillStyle = entity["colour"];
+        fillStyle = grd;
         strokeStyle = fillStyle;
         arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);  
-        stroke();                                
+        stroke();
     }
 }
 
@@ -138,7 +173,7 @@ function addEntity(entity, data) {
     world[entity] = data;
     drawNextFrame(); // (but should we?)
     //XXX: Send a XHTML Request that updates the entity you just  modified!
-
+    sendJSONXMLHTTPRequest("/entity/"+ clientID + entity, data, null);
 }
 
 var counter = 0;
@@ -247,7 +282,7 @@ mouse = (function() {
 // Add the application specific mouse listeners!
 //XXX: TODO Make these prettier!
 mouse.mousedowners.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'blue'});
+    addEntityWithoutName({'x':x,'y':y,'colour':'orange'});
 });
 
 mouse.mouseuppers.push(function(x,y,clicked,e) {
@@ -255,13 +290,15 @@ mouse.mouseuppers.push(function(x,y,clicked,e) {
 });
 
 mouse.mousedraggers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'green',
+    addEntityWithoutName({'x':x,'y':y,'colour':'pink',
                           'radius':10});
 });
 
 
 function update() {
     //XXX: TODO Get the world from the webservice using a XMLHTTPRequest
+    sendJSONXMLHTTPRequest("/world", "", 
+               function(data){world=data; drawNextFrame();});
     drawFrame();
 }
 
